@@ -110,9 +110,7 @@ const Index = () => {
   };
 
   const startCombat = () => {
-    if (entities.some((e) => e.initiative === null)) {
-      rollInitiative(false);
-    }
+    rollInitiative(false);
     setRound(1); setTurnIndex(0);
     setStats({ damage: 0, healing: 0, startedAt: Date.now() });
     addLog('⚔️ Combate iniciado — Rodada 1', 'turn');
@@ -128,7 +126,11 @@ const Index = () => {
     if (cur) addLog(`Turno: ${cur.name}`, 'turn');
   }, [round, turnIndex, ordered, addLog]);
 
-  const restartRound = () => { setTurnIndex(0); addLog('Rodada reiniciada', 'turn'); };
+  const restartRound = () => {
+    rollInitiative(false);
+    setTurnIndex(0);
+    addLog('Rodada reiniciada — iniciativa rerrolada', 'turn');
+  };
 
   const endCombat = () => {
     const dur = stats.startedAt ? Math.round((Date.now() - stats.startedAt) / 1000) : 0;
