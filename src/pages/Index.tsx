@@ -6,11 +6,13 @@ import EntityCard from '@/components/combat/EntityCard';
 import EntityDialog from '@/components/combat/EntityDialog';
 import DicePanel from '@/components/combat/DicePanel';
 import CombatLog from '@/components/combat/CombatLog';
+import LibraryDialog from '@/components/combat/LibraryDialog';
+import { CharacterPreset } from '@/lib/library';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
   Plus, Play, RotateCcw, ChevronRight, Save, FolderOpen, Dice5,
-  CheckSquare, Square, Trash2, Flag, Swords,
+  CheckSquare, Square, Trash2, Flag, Swords, BookOpen,
 } from 'lucide-react';
 
 const newId = () => crypto.randomUUID();
@@ -26,6 +28,7 @@ const Index = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showSaved, setShowSaved] = useState(false);
   const [saved, setSaved] = useState(listSaved());
+  const [libraryOpen, setLibraryOpen] = useState(false);
   const [stats, setStats] = useState({ damage: 0, healing: 0, startedAt: 0 });
 
   // autosave
