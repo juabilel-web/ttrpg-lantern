@@ -320,6 +320,20 @@ const Index = () => {
         onSave={handleSaveEntity}
         initial={editingEntity}
       />
+      <LibraryDialog
+        open={libraryOpen}
+        onClose={() => setLibraryOpen(false)}
+        onAddToCombat={(p) => {
+          setEntities((prev) => [...prev, {
+            id: newId(),
+            name: p.name, kind: p.kind, hp: p.hp, maxHp: p.maxHp,
+            ac: p.ac, bab: p.bab, fort: p.fort, ref: p.ref, will: p.will,
+            initiativeMod: p.initiativeMod,
+            conditions: [], dead: false, unconscious: false, initiative: null,
+          }]);
+          addLog(`📖 ${p.name} adicionado da biblioteca`);
+        }}
+      />
     </div>
   );
 };
