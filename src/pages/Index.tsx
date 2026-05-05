@@ -6,11 +6,13 @@ import EntityCard from '@/components/combat/EntityCard';
 import EntityDialog from '@/components/combat/EntityDialog';
 import DicePanel from '@/components/combat/DicePanel';
 import CombatLog from '@/components/combat/CombatLog';
+import LibraryDialog from '@/components/combat/LibraryDialog';
+import { CharacterPreset } from '@/lib/library';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
   Plus, Play, RotateCcw, ChevronRight, Save, FolderOpen, Dice5,
-  CheckSquare, Square, Trash2, Flag, Swords,
+  CheckSquare, Square, Trash2, Flag, Swords, BookOpen,
 } from 'lucide-react';
 
 const newId = () => crypto.randomUUID();
@@ -26,6 +28,7 @@ const Index = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showSaved, setShowSaved] = useState(false);
   const [saved, setSaved] = useState(listSaved());
+  const [libraryOpen, setLibraryOpen] = useState(false);
   const [stats, setStats] = useState({ damage: 0, healing: 0, startedAt: 0 });
 
   // autosave
@@ -186,6 +189,9 @@ const Index = () => {
           </div>
 
           <div className="ml-auto flex flex-wrap items-center gap-1.5">
+            <Button size="sm" variant="outline" onClick={() => setLibraryOpen(true)}>
+              <BookOpen className="w-3.5 h-3.5" /> Biblioteca
+            </Button>
             <Button size="sm" variant="outline" onClick={() => { setEditingId(null); setDialogOpen(true); }}>
               <Plus className="w-3.5 h-3.5" /> Entidade
             </Button>
@@ -313,6 +319,20 @@ const Index = () => {
         onClose={() => { setDialogOpen(false); setEditingId(null); }}
         onSave={handleSaveEntity}
         initial={editingEntity}
+      />
+      <LibraryDialog
+        open={libraryOpen}
+        onClose={() => setLibraryOpen(false)}
+        onAddToCombat={(p) => {
+          setEntities((prev) => [...prev, {
+            id: newId(),
+            name: p.name, kind: p.kind, hp: p.hp, maxHp: p.maxHp,
+            ac: p.ac, bab: p.bab, fort: p.fort, ref: p.ref, will: p.will,
+            initiativeMod: p.initiativeMod,
+            conditions: [], dead: false, unconscious: false, initiative: null,
+          }]);
+          addLog(`📖 ${p.name} adicionado da biblioteca`);
+        }}
       />
     </div>
   );
