@@ -7,13 +7,15 @@ import EntityDialog from '@/components/combat/EntityDialog';
 import DicePanel from '@/components/combat/DicePanel';
 import CombatLog from '@/components/combat/CombatLog';
 import LibraryDialog from '@/components/combat/LibraryDialog';
-import { CharacterPreset } from '@/lib/library';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetHeader } from '@/components/ui/sheet';
 import {
   Plus, Play, RotateCcw, ChevronRight, Save, FolderOpen, Dice5,
-  CheckSquare, Square, Trash2, Flag, Swords, BookOpen,
+  CheckSquare, Square, Trash2, Flag, Swords, BookOpen, ScrollText, MoreVertical,
 } from 'lucide-react';
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
 
 const newId = () => crypto.randomUUID();
 
@@ -29,9 +31,9 @@ const Index = () => {
   const [showSaved, setShowSaved] = useState(false);
   const [saved, setSaved] = useState(listSaved());
   const [libraryOpen, setLibraryOpen] = useState(false);
+  const [logSheetOpen, setLogSheetOpen] = useState(false);
   const [stats, setStats] = useState({ damage: 0, healing: 0, startedAt: 0 });
 
-  // autosave
   useEffect(() => {
     saveCurrent({ entities, round, turnIndex, log });
   }, [entities, round, turnIndex, log]);
@@ -161,7 +163,6 @@ const Index = () => {
     setShowSaved(false);
   };
 
-  // keyboard shortcut
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
       if ((e.target as HTMLElement)?.tagName === 'INPUT') return;
@@ -173,60 +174,122 @@ const Index = () => {
 
   const editingEntity = editingId ? entities.find((e) => e.id === editingId) ?? null : null;
 
+  const SidePanel = (
+    <>
+      <div className="p-3 border-b border-border">
+        <div className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Estatísticas</div>
+        <div className="grid grid-cols-3 gap-2 text-center">
+          <div className="bg-secondary/50 rounded p-2">
+            <div className="text-[10px] text-muted-foreground uppercase">Rodadas</div>
+            <div className="font-bold">{round}</div>
+          </div>
+          <div className="bg-hp-damage/10 rounded p-2">
+            <div className="text-[10px] text-hp-damage uppercase">Dano</div>
+            <div className="font-bold text-hp-damage">{stats.damage}</div>
+          </div>
+          <div className="bg-hp-heal/10 rounded p-2">
+            <div className="text-[10px] text-hp-heal uppercase">Cura</div>
+            <div className="font-bold text-hp-heal">{stats.healing}</div>
+          </div>
+        </div>
+      </div>
+      <CombatLog entries={log} onClear={() => setLog([])} />
+      <DicePanel onRoll={(t) => addLog(t, 'roll')} />
+    </>
+  );
+
   return (
-    <div className="flex h-screen overflow-hidden bg-background text-foreground">
-      {/* Main */}
-      <main className="flex-1 flex flex-col overflow-hidden">
-        <header className="border-b border-border px-4 py-3 flex items-center gap-3 flex-wrap">
-          <div className="flex items-center gap-2">
-            <Swords className="w-5 h-5 text-primary" />
-            <h1 className="font-display text-lg font-bold">Mestre D&amp;D 3.5</h1>
+    <div className="flex h-[100dvh] overflow-hidden bg-background text-foreground">
+      <main className="flex-1 flex flex-col overflow-hidden min-w-0">
+        {/* Header */}
+        <header className="border-b border-border px-3 py-2 flex items-center gap-2">
+          <Swords className="w-5 h-5 text-primary shrink-0" />
+          <h1 className="font-display text-base font-bold truncate">Mestre D&amp;D 3.5</h1>
+          <div className="flex items-center gap-1.5 ml-1">
+            <span className="text-[10px] text-muted-foreground hidden sm:inline">Rodada</span>
+            <span className="font-mono font-bold text-sm px-2 py-0.5 rounded bg-secondary">{round}</span>
           </div>
 
-          <div className="flex items-center gap-1.5 ml-2">
-            <span className="text-xs text-muted-foreground">Rodada</span>
-            <span className="font-mono font-bold text-base px-2 py-0.5 rounded bg-secondary">{round}</span>
-          </div>
+          <div className="ml-auto flex items-center gap-1">
+            {/* Mobile: log/dice sheet trigger */}
+            <Sheet open={logSheetOpen} onOpenChange={setLogSheetOpen}>
+              <SheetTrigger asChild>
+                <Button size="sm" variant="outline" className="lg:hidden h-8 px-2 relative">
+                  <ScrollText className="w-4 h-4" />
+                  {log.length > 0 && (
+                    <span className="absolute -top-1 -right-1 text-[9px] bg-accent text-accent-foreground rounded-full px-1 min-w-[14px] h-[14px] flex items-center justify-center">
+                      {log.length > 99 ? '99+' : log.length}
+                    </span>
+                  )}
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-[88vw] max-w-sm p-0 flex flex-col">
+                <SheetHeader className="p-3 border-b border-border">
+                  <SheetTitle className="text-sm">Log &amp; Dados</SheetTitle>
+                </SheetHeader>
+                <div className="flex-1 flex flex-col overflow-hidden">{SidePanel}</div>
+              </SheetContent>
+            </Sheet>
 
-          <div className="ml-auto flex flex-wrap items-center gap-1.5">
-            <Button size="sm" variant="outline" onClick={() => setLibraryOpen(true)}>
-              <BookOpen className="w-3.5 h-3.5" /> Biblioteca
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => { setEditingId(null); setDialogOpen(true); }}>
-              <Plus className="w-3.5 h-3.5" /> Entidade
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => rollInitiative(false)} disabled={!entities.length}>
-              <Dice5 className="w-3.5 h-3.5" /> Init Todos
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => rollInitiative(true)} disabled={!selected.size}>
-              <Dice5 className="w-3.5 h-3.5" /> Init Sel ({selected.size})
-            </Button>
+            {/* Primary action — always visible */}
             {round === 0 ? (
-              <Button size="sm" variant="combat" onClick={startCombat} disabled={!entities.length}>
-                <Play className="w-3.5 h-3.5" /> Iniciar
+              <Button size="sm" variant="combat" className="h-8 px-2.5" onClick={startCombat} disabled={!entities.length}>
+                <Play className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline ml-1">Iniciar</span>
               </Button>
             ) : (
-              <>
-                <Button size="sm" variant="combat" onClick={nextTurn}>
-                  Próx. <ChevronRight className="w-3.5 h-3.5" />
-                </Button>
-                <Button size="sm" variant="outline" onClick={restartRound} title="Reiniciar rodada">
-                  <RotateCcw className="w-3.5 h-3.5" />
-                </Button>
-                <Button size="sm" variant="destructive" onClick={endCombat}>
-                  <Flag className="w-3.5 h-3.5" /> Fim
-                </Button>
-              </>
+              <Button size="sm" variant="combat" className="h-8 px-2.5" onClick={nextTurn}>
+                <span className="hidden sm:inline mr-1">Próx.</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </Button>
             )}
-            <Button size="sm" variant="ghost" onClick={handleSaveCombat} title="Salvar">
-              <Save className="w-3.5 h-3.5" />
+
+            {/* Add entity — always visible */}
+            <Button size="sm" variant="outline" className="h-8 px-2" onClick={() => { setEditingId(null); setDialogOpen(true); }}>
+              <Plus className="w-3.5 h-3.5" />
             </Button>
-            <Button size="sm" variant="ghost" onClick={() => { setSaved(listSaved()); setShowSaved((v) => !v); }} title="Carregar">
-              <FolderOpen className="w-3.5 h-3.5" />
-            </Button>
-            <Button size="sm" variant="ghost" onClick={clearAll} title="Limpar tudo">
-              <Trash2 className="w-3.5 h-3.5" />
-            </Button>
+
+            {/* Overflow menu (groups everything else) */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
+                  <MoreVertical className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 bg-popover">
+                <DropdownMenuItem onClick={() => setLibraryOpen(true)}>
+                  <BookOpen className="w-4 h-4 mr-2" /> Biblioteca
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => rollInitiative(false)} disabled={!entities.length}>
+                  <Dice5 className="w-4 h-4 mr-2" /> Iniciativa: todos
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => rollInitiative(true)} disabled={!selected.size}>
+                  <Dice5 className="w-4 h-4 mr-2" /> Iniciativa: selecionados ({selected.size})
+                </DropdownMenuItem>
+                {round > 0 && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={restartRound}>
+                      <RotateCcw className="w-4 h-4 mr-2" /> Reiniciar rodada
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={endCombat} className="text-hp-damage focus:text-hp-damage">
+                      <Flag className="w-4 h-4 mr-2" /> Finalizar combate
+                    </DropdownMenuItem>
+                  </>
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSaveCombat}>
+                  <Save className="w-4 h-4 mr-2" /> Salvar combate
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => { setSaved(listSaved()); setShowSaved((v) => !v); }}>
+                  <FolderOpen className="w-4 h-4 mr-2" /> Carregar combate
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={clearAll} className="text-hp-damage focus:text-hp-damage">
+                  <Trash2 className="w-4 h-4 mr-2" /> Limpar tudo
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </header>
 
@@ -237,11 +300,11 @@ const Index = () => {
             <div className="space-y-1">
               {saved.map((c) => (
                 <div key={c.id} className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-secondary/50">
-                  <button className="flex-1 text-left" onClick={() => loadSaved(c.id)}>
-                    <div className="text-sm font-medium">{c.name}</div>
+                  <button className="flex-1 text-left min-w-0" onClick={() => loadSaved(c.id)}>
+                    <div className="text-sm font-medium truncate">{c.name}</div>
                     <div className="text-[10px] text-muted-foreground">{new Date(c.savedAt).toLocaleString()} · {c.entities.length} entidades</div>
                   </button>
-                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => { deleteSaved(c.id); setSaved(listSaved()); }}>
+                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0 shrink-0" onClick={() => { deleteSaved(c.id); setSaved(listSaved()); }}>
                     <Trash2 className="w-3.5 h-3.5 text-hp-damage" />
                   </Button>
                 </div>
@@ -251,18 +314,20 @@ const Index = () => {
         )}
 
         {entities.length > 0 && (
-          <div className="px-4 py-2 border-b border-border flex items-center gap-2 text-xs">
-            <button onClick={toggleAll} className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground">
+          <div className="px-3 py-1.5 border-b border-border flex items-center gap-2 text-xs overflow-x-auto">
+            <button onClick={toggleAll} className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground shrink-0">
               {allSelected ? <CheckSquare className="w-3.5 h-3.5" /> : <Square className="w-3.5 h-3.5" />}
               Selecionar todos
             </button>
-            <span className="text-muted-foreground">· Atalho: <kbd className="px-1.5 py-0.5 bg-secondary rounded font-mono">Espaço</kbd> avança turno</span>
+            <span className="text-muted-foreground hidden sm:inline shrink-0">
+              · <kbd className="px-1.5 py-0.5 bg-secondary rounded font-mono">Espaço</kbd> avança turno
+            </span>
           </div>
         )}
 
-        <div className="flex-1 overflow-auto p-4 space-y-2">
+        <div className="flex-1 overflow-auto p-2 sm:p-4 space-y-2">
           {entities.length === 0 && (
-            <div className="h-full flex flex-col items-center justify-center gap-3 text-muted-foreground">
+            <div className="h-full flex flex-col items-center justify-center gap-3 text-muted-foreground text-center px-4">
               <Swords className="w-16 h-16 opacity-20" />
               <p>Nenhuma entidade. Adicione jogadores e inimigos para começar.</p>
               <Button onClick={() => { setEditingId(null); setDialogOpen(true); }}>
@@ -271,11 +336,11 @@ const Index = () => {
             </div>
           )}
           {ordered.map((e) => (
-            <div key={e.id} className="flex items-start gap-2">
-              <button onClick={() => toggleSelect(e.id)} className="mt-3 text-muted-foreground hover:text-foreground">
+            <div key={e.id} className="flex items-start gap-1.5 sm:gap-2">
+              <button onClick={() => toggleSelect(e.id)} className="mt-3 text-muted-foreground hover:text-foreground shrink-0">
                 {selected.has(e.id) ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
               </button>
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <EntityCard
                   entity={e}
                   isActive={e.id === activeId}
@@ -291,27 +356,9 @@ const Index = () => {
         </div>
       </main>
 
-      {/* Side panel */}
-      <aside className="w-80 border-l border-border flex flex-col bg-card/30">
-        <div className="p-3 border-b border-border">
-          <div className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Estatísticas</div>
-          <div className="grid grid-cols-3 gap-2 text-center">
-            <div className="bg-secondary/50 rounded p-2">
-              <div className="text-[10px] text-muted-foreground uppercase">Rodadas</div>
-              <div className="font-bold">{round}</div>
-            </div>
-            <div className="bg-hp-damage/10 rounded p-2">
-              <div className="text-[10px] text-hp-damage uppercase">Dano</div>
-              <div className="font-bold text-hp-damage">{stats.damage}</div>
-            </div>
-            <div className="bg-hp-heal/10 rounded p-2">
-              <div className="text-[10px] text-hp-heal uppercase">Cura</div>
-              <div className="font-bold text-hp-heal">{stats.healing}</div>
-            </div>
-          </div>
-        </div>
-        <CombatLog entries={log} onClear={() => setLog([])} />
-        <DicePanel onRoll={(t) => addLog(t, 'roll')} />
+      {/* Desktop side panel */}
+      <aside className="hidden lg:flex w-80 border-l border-border flex-col bg-card/30">
+        {SidePanel}
       </aside>
 
       <EntityDialog
