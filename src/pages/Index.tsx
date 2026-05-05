@@ -8,6 +8,7 @@ import DicePanel from '@/components/combat/DicePanel';
 import CombatLog from '@/components/combat/CombatLog';
 import LibraryDialog from '@/components/combat/LibraryDialog';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetHeader } from '@/components/ui/sheet';
 import {
   Plus, Play, RotateCcw, ChevronRight, Save, FolderOpen, Dice5,
@@ -33,6 +34,7 @@ const Index = () => {
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [logSheetOpen, setLogSheetOpen] = useState(false);
   const [stats, setStats] = useState({ damage: 0, healing: 0, startedAt: 0 });
+  const [autoRerollInitiative, setAutoRerollInitiative] = useState(false);
 
   useEffect(() => {
     saveCurrent({ entities, round, turnIndex, log });
@@ -104,7 +106,7 @@ const Index = () => {
   const allSelected = selected.size === entities.length && entities.length > 0;
   const toggleAll = () => setSelected(allSelected ? new Set() : new Set(entities.map((e) => e.id)));
 
-  const rollInitiative = (onlySelected: boolean) => {
+  const rollInitiative = useCallback((onlySelected: boolean) => {
     const targetIds = onlySelected ? selected : new Set(entities.map((e) => e.id));
     setEntities((p) => p.map((e) => {
       if (!targetIds.has(e.id)) return e;
@@ -112,7 +114,7 @@ const Index = () => {
       return { ...e, initiative: r };
     }));
     addLog(`Iniciativa rolada para ${onlySelected ? `${targetIds.size} selecionado(s)` : 'todos'}`, 'roll');
-  };
+  }, [selected, entities, addLog]);
 
   const startCombat = () => {
     rollInitiative(false);
@@ -125,11 +127,19 @@ const Index = () => {
     if (round === 0 || ordered.length === 0) return;
     let next = turnIndex + 1;
     let r = round;
-    if (next >= ordered.length) { next = 0; r += 1; addLog(`— Rodada ${r} —`, 'turn'); }
+    if (next >= ordered.length) { 
+      next = 0; 
+      r += 1; 
+      addLog(`— Rodada ${r} —`, 'turn');
+      if (autoRerollInitiative) {
+        rollInitiative(false);
+        addLog('Iniciativa rerrolada automaticamente', 'roll');
+      }
+    }
     setTurnIndex(next); setRound(r);
     const cur = ordered[next];
     if (cur) addLog(`Turno: ${cur.name}`, 'turn');
-  }, [round, turnIndex, ordered, addLog]);
+  }, [round, turnIndex, ordered, addLog, autoRerollInitiative, rollInitiative]);
 
   const restartRound = () => {
     rollInitiative(false);
@@ -191,6 +201,17 @@ const Index = () => {
             <div className="text-[10px] text-hp-heal uppercase">Cura</div>
             <div className="font-bold text-hp-heal">{stats.healing}</div>
           </div>
+        </div>
+      </div>
+      <div className="p-3 border-b border-border">
+        <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Opções de Combate</div>
+        <div className="flex items-center justify-between">
+          <label htmlFor="auto-reroll" className="text-sm text-muted-foreground">Rerrolar iniciativa ao fim da rodada</label>
+          <Switch
+            id="auto-reroll"
+            checked={autoRerollInitiative}
+            onCheckedChange={setAutoRerollInitiative}
+          />
         </div>
       </div>
       <CombatLog entries={log} onClear={() => setLog([])} />
