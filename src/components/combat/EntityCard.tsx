@@ -46,11 +46,11 @@ export default function EntityCard({ entity, isActive, onUpdate, onRemove, onDup
         : entity.dead ? 'bg-card/40 border-border opacity-60'
         : 'bg-card border-border hover:border-border/80'
     }`}>
-      <div className="flex items-start gap-3">
-        <div className={`shrink-0 w-12 h-12 rounded-md flex flex-col items-center justify-center font-bold ${
+      <div className="flex items-start gap-2 sm:gap-3">
+        <div className={`shrink-0 w-11 h-11 sm:w-12 sm:h-12 rounded-md flex flex-col items-center justify-center font-bold ${
           entity.kind === 'enemy' ? 'bg-hp-damage/20 text-hp-damage' : 'bg-primary/20 text-primary'
         }`}>
-          <span className="text-lg leading-none">{entity.initiative ?? '—'}</span>
+          <span className="text-base sm:text-lg leading-none">{entity.initiative ?? '—'}</span>
           <span className="text-[9px] uppercase opacity-60">init</span>
         </div>
 
@@ -62,7 +62,7 @@ export default function EntityCard({ entity, isActive, onUpdate, onRemove, onDup
             {isActive && <span className="text-[10px] font-bold text-primary uppercase tracking-wider">ATUAL</span>}
           </div>
 
-          <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+          <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
             <span>CA <b className="text-foreground">{entity.ac}</b></span>
             <span>BBA <b className="text-foreground">{entity.bab >= 0 ? '+' : ''}{entity.bab}</b></span>
             <span>Fort <b className="text-foreground">{entity.fort >= 0 ? '+' : ''}{entity.fort}</b></span>
