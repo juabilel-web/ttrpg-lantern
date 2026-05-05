@@ -189,6 +189,9 @@ const Index = () => {
           </div>
 
           <div className="ml-auto flex flex-wrap items-center gap-1.5">
+            <Button size="sm" variant="outline" onClick={() => setLibraryOpen(true)}>
+              <BookOpen className="w-3.5 h-3.5" /> Biblioteca
+            </Button>
             <Button size="sm" variant="outline" onClick={() => { setEditingId(null); setDialogOpen(true); }}>
               <Plus className="w-3.5 h-3.5" /> Entidade
             </Button>
