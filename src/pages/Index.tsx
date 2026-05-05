@@ -310,7 +310,7 @@ const Index = () => {
             </div>
           </div>
         </div>
-        <CombatLog entries={log} />
+        <CombatLog entries={log} onClear={() => setLog([])} />
         <DicePanel onRoll={(t) => addLog(t, 'roll')} />
       </aside>
 
